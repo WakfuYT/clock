@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#171717;--fg:#f2f2f2;--mut:#bdbdbd;--dim:#8a8a8a;--line:#3a3a3a;--card:#1d1d1d;--ctl:#262626;--acc:#0a84ff}
+:root[data-theme="light"]{--bg:#f6f6f6;--fg:#141414;--mut:#4d4d4d;--dim:#767676;--line:#cfcfcf;--card:#ffffff;--ctl:#e6e6e6}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:Roboto,system-ui,Segoe UI,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+header{height:60px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:relative}
+h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.2px}
+.view{position:absolute;left:50%;transform:translateX(-50%)}
+.view select{appearance:none;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 4px center no-repeat;border:0;padding:8px 24px 8px 8px;font-size:14px;font-weight:500;cursor:pointer;border-radius:6px}
+.view select option{background:var(--card);color:var(--fg)}
+.tools{display:flex;gap:6px}
+.ib{width:40px;height:40px;display:grid;place-items:center;background:none;border:0;border-radius:8px;cursor:pointer;color:var(--fg)}
+.ib:hover{background:var(--ctl)}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.wrap{flex:1;display:flex;min-height:0}
+main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:auto}
+aside{width:320px;flex:none;padding:24px 24px 24px 16px;overflow:auto}
+aside.hide{display:none}
+aside h2{margin:6px 0 18px;font-size:19px;font-weight:700}
+.row{display:flex;align-items:center;justify-content:space-between;margin:0 0 18px;font-size:14px;font-weight:500}
+.seg{display:flex;background:var(--ctl);border-radius:6px;padding:3px}
+.seg button{border:0;background:none;padding:3px 9px;font-size:11.5px;font-weight:500;border-radius:4px;cursor:pointer;color:var(--mut)}
+.seg button.on{background:var(--acc);color:#fff}
+.sw{width:38px;height:23px;border-radius:12px;background:var(--ctl);border:0;position:relative;cursor:pointer;padding:0}
+.sw::after{content:"";position:absolute;top:2.5px;left:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw[aria-checked="true"]{background:var(--acc)}
+.sw[aria-checked="true"]::after{transform:translateX(15px)}
+.lbl{font-size:14px;font-weight:500;margin:22px 0 10px}
+.tz input,.tz select{width:100%;background:var(--ctl);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:13px}
+.tz select{margin-top:8px}
+.tz option{background:var(--card);color:var(--fg)}
+.tpl{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 14px;padding:12px 14px;background:none;border:2px solid var(--line);border-radius:10px;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:var(--mut)}
+.tpl:hover{border-color:var(--dim)}
+.tpl.on{border-color:var(--acc);color:var(--fg)}
+.tpl .pv{background:#000;border-radius:5px;width:84px;height:44px;display:grid;place-items:center;font-family:"Share Tech Mono",monospace;font-style:italic;font-size:15px}
+/* digital */
+#clock{text-align:center;--c:var(--fg)}
+#time{font-size:clamp(46px,11.5vw,170px);font-weight:300;letter-spacing:.06em;line-height:1;color:var(--c);white-space:nowrap;font-variant-numeric:tabular-nums}
+#time small{font-size:.2em;letter-spacing:.05em;margin-left:.4em;vertical-align:top;font-weight:400}
+#date{margin-top:34px;font-size:clamp(16px,2.4vw,24px);letter-spacing:.1em;color:var(--mut)}
+#zone{margin-top:10px;font-size:14px;color:var(--dim);letter-spacing:.03em}
+#clock[data-tpl]:not([data-tpl="digital"]) #time{font-family:"Share Tech Mono",monospace;font-weight:400;font-style:italic;text-shadow:0 0 22px color-mix(in srgb,var(--c) 55%,transparent)}
+#clock[data-tpl="blue"]{--c:#4aa3ff}#clock[data-tpl="red"]{--c:#ff4d3d}#clock[data-tpl="amber"]{--c:#ffa726}#clock[data-tpl="green"]{--c:#3ddc84}#clock[data-tpl="violet"]{--c:#b388ff}
+/* analog */
+#analog{width:min(70vh,86vw,520px)}
+#analog circle.f{fill:var(--card);stroke:var(--line);stroke-width:2}
+#analog .t{stroke:var(--dim);stroke-width:2}#analog .t5{stroke:var(--fg);stroke-width:4}
+#analog .h,#analog .m{stroke:var(--fg);stroke-linecap:round}#analog .s{stroke:#ff4d3d;stroke-width:2;stroke-linecap:round}
+/* world */
+#world{width:100%;max-width:1100px;align-self:stretch;margin:0 auto}
+#world input{width:100%;max-width:360px;background:var(--ctl);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:16px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:left;cursor:pointer}
+.card:hover{border-color:var(--dim)}
+.card.me{border-color:var(--acc)}
+.card b{display:block;font-weight:500;font-size:15px}
+.card span{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+.card em{display:block;font-style:normal;font-size:26px;font-weight:300;margin-top:10px;font-variant-numeric:tabular-nums}
+.card i{font-style:normal;font-size:12px;color:var(--mut)}
+[hidden]{display:none!important}
+@media(max-width:900px){aside{position:fixed;right:0;top:60px;bottom:0;background:var(--bg);border-left:1px solid var(--line);z-index:5}}
+@media(prefers-reduced-motion:reduce){.sw::after{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Digital Clock</h1>
+  <div class="view"><select id="view" aria-label="Clock type">
+    <option value="digital">Digital Clock</option>
+    <option value="analog">Analog Clock</option>
+    <option value="world">World Clocks</option>
+  </select></div>
+  <div class="tools">
+    <button class="ib" id="fs" aria-label="Fullscreen"><svg class="i" viewBox="0 0 24 24"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg></button>
+    <button class="ib" id="th" aria-label="Toggle theme"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    <button class="ib" id="gear" aria-label="Settings"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <div id="clock" data-tpl="digital">
+      <div id="time">00:00:00</div>
+      <div id="date"></div>
+      <div id="zone"></div>
+    </div>
+    <svg id="analog" viewBox="0 0 300 300" hidden></svg>
+    <section id="world" hidden>
+      <input id="wq" type="search" placeholder="Search time zones" aria-label="Search time zones">
+      <div id="grid"></div>
+    </section>
+  </main>
+
+  <aside id="panel">
+    <h2>Settings</h2>
+    <div class="row">Format
+      <div class="seg" id="fmt"><button data-v="24">24H</button><button data-v="12">12H</button></div>
+    </div>
+    <div class="row">Second <button class="sw" id="sec" role="switch" aria-label="Show seconds"></button></div>
+    <div class="row">Day and Year <button class="sw" id="dy" role="switch" aria-label="Show day and year"></button></div>
+
+    <div class="lbl">Time zone</div>
+    <div class="tz">
+      <input id="tzq" type="search" placeholder="Search time zones" aria-label="Search time zones">
+      <select id="tz" size="1" aria-label="Time zone"></select>
+    </div>
+
+    <div id="tpls">
+      <div class="lbl">Clock Template</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const KEY="digital-clock-settings";
+let S={fmt:"24",sec:true,dy:true,tpl:"digital",view:"digital",theme:"dark",tz:"auto",panel:window.innerWidth>900};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const LOCAL=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";
+let ZONES=[];
+try{ZONES=Intl.supportedValuesOf("timeZone").slice()}catch(e){ZONES=["Africa/Cairo","Africa/Johannesburg","Africa/Lagos","America/Anchorage","America/Chicago","America/Denver","America/Los_Angeles","America/Mexico_City","America/New_York","America/Sao_Paulo","America/Toronto","Asia/Dubai","Asia/Hong_Kong","Asia/Kolkata","Asia/Seoul","Asia/Shanghai","Asia/Singapore","Asia/Tokyo","Australia/Sydney","Europe/Berlin","Europe/London","Europe/Moscow","Europe/Paris","Pacific/Auckland","Pacific/Honolulu"]}
+if(!ZONES.includes("UTC"))ZONES.unshift("UTC");
+if(!ZONES.includes(LOCAL))ZONES.push(LOCAL);
+const zone=()=>S.tz==="auto"?LOCAL:S.tz;
+const nice=z=>z.replace(/_/g," ");
+const city=z=>nice(z.split("/").pop());
+const region=z=>z.includes("/")?nice(z.split("/").slice(0,-1).join(" / ")):"";
+
+const cache={};
+function F(z,o){const k=z+JSON.stringify(o);return cache[k]||(cache[k]=new Intl.DateTimeFormat("en-US",Object.assign({timeZone:z},o)))}
+function parts(z,d,hc,off){
+  const p=F(z,Object.assign({hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:hc},off?{timeZoneName:"shortOffset"}:{})).formatToParts(d);
+  const g=t=>(p.find(x=>x.type===t)||{}).value||"";
+  return{h:g("hour"),m:g("minute"),s:g("second"),ap:g("dayPeriod"),off:g("timeZoneName")};
+}
+const hc=()=>S.fmt==="24"?"h23":"h12";
+function str(p){return p.h+":"+p.m+(S.sec?":"+p.s:"")}
+const offOf=(z,d)=>parts(z,d,"h23",true).off.replace("GMT","UTC")||"UTC";
+
+/* settings UI */
+const TPLS=[["digital","Digital","#fff"],["blue","Digital-Blue","#4aa3ff"],["red","Digital-Red","#ff4d3d"],["amber","Digital-Amber","#ffa726"],["green","Digital-Green","#3ddc84"],["violet","Digital-Violet","#b388ff"]];
+const tp=$("#tpls");
+TPLS.forEach(([id,name,c])=>{
+  const b=document.createElement("button");
+  b.className="tpl";b.dataset.id=id;
+  b.innerHTML='<span class="pv" style="color:'+c+';text-shadow:0 0 6px '+c+'55">24:00:00</span><span>'+name+'</span>';
+  b.onclick=()=>{S.tpl=id;save();apply()};
+  tp.appendChild(b);
+});
+document.querySelectorAll("#fmt button").forEach(b=>b.onclick=()=>{S.fmt=b.dataset.v;save();apply()});
+$("#sec").onclick=()=>{S.sec=!S.sec;save();apply()};
+$("#dy").onclick=()=>{S.dy=!S.dy;save();apply()};
+$("#view").onchange=e=>{S.view=e.target.value;save();apply()};
+$("#th").onclick=()=>{S.theme=S.theme==="dark"?"light":"dark";save();apply()};
+$("#gear").onclick=()=>{S.panel=!S.panel;save();apply()};
+$("#fs").onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()};
+
+/* time zone select */
+const tzSel=$("#tz");
+function buildTz(q){
+  q=(q||"").toLowerCase().trim();
+  const now=new Date();
+  tzSel.innerHTML="";
+  const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;tzSel.appendChild(o)};
+  if(!q||"auto detect".includes(q)||LOCAL.toLowerCase().includes(q))add("auto","Auto-detect ("+nice(LOCAL)+")");
+  ZONES.filter(z=>!q||nice(z).toLowerCase().includes(q)).forEach(z=>add(z,nice(z)+"  ("+offOf(z,now)+")"));
+  tzSel.value=S.tz;
+  if(tzSel.value!==S.tz&&tzSel.options.length)tzSel.selectedIndex=-1;
+  tzSel.size=q?6:1;
+}
+$("#tzq").oninput=e=>buildTz(e.target.value);
+tzSel.onchange=()=>{S.tz=tzSel.value;save();apply();if($("#tzq").value){$("#tzq").value="";buildTz("")}};
+
+/* analog */
+const A=$("#analog");
+(function(){
+  let h='<circle class="f" cx="150" cy="150" r="144"/>';
+  for(let i=0;i<60;i++){const big=i%5===0,a=i*6*Math.PI/180,r1=big?120:130,r2=138;
+    h+='<line class="'+(big?"t5":"t")+'" x1="'+(150+Math.sin(a)*r1)+'" y1="'+(150-Math.cos(a)*r1)+'" x2="'+(150+Math.sin(a)*r2)+'" y2="'+(150-Math.cos(a)*r2)+'"/>'}
+  h+='<line class="h" id="ah" x1="150" y1="150" x2="150" y2="90" stroke-width="7"/><line class="m" id="am" x1="150" y1="150" x2="150" y2="55" stroke-width="4"/><line class="s" id="as" x1="150" y1="165" x2="150" y2="42"/><circle cx="150" cy="150" r="5" fill="#ff4d3d"/>';
+  A.innerHTML=h;
+})();
+
+/* world grid */
+const grid=$("#grid");let cards=[];
+function buildWorld(){
+  const q=$("#wq").value.toLowerCase().trim();
+  grid.innerHTML="";cards=[];
+  ZONES.filter(z=>!q||nice(z).toLowerCase().includes(q)).forEach(z=>{
+    const b=document.createElement("button");
+    b.className="card"+(z===zone()?" me":"");
+    b.innerHTML="<b>"+city(z)+"</b><span>"+(region(z)||"&nbsp;")+"</span><em></em><i></i>";
+    b.onclick=()=>{S.tz=z===LOCAL?"auto":z;S.view="digital";save();apply()};
+    grid.appendChild(b);
+    cards.push({z,t:b.querySelector("em"),o:b.querySelector("i")});
+  });
+}
+$("#wq").oninput=()=>{buildWorld();tick()};
+
+/* render */
+function apply(){
+  document.documentElement.dataset.theme=S.theme;
+  $("#view").value=S.view;
+  document.querySelectorAll("#fmt button").forEach(b=>b.classList.toggle("on",b.dataset.v===S.fmt));
+  $("#sec").setAttribute("aria-checked",S.sec);
+  $("#dy").setAttribute("aria-checked",S.dy);
+  document.querySelectorAll(".tpl").forEach(b=>b.classList.toggle("on",b.dataset.id===S.tpl));
+  $("#clock").dataset.tpl=S.tpl;
+  $("#panel").classList.toggle("hide",!S.panel);
+  $("#clock").hidden=S.view!=="digital";
+  A.hidden=S.view!=="analog";
+  $("#world").hidden=S.view!=="world";
+  $("#tpls").hidden=S.view!=="digital";
+  $("#as").style.display=S.sec?"":"none";
+  tzSel.value=S.tz;
+  if(S.view==="world")buildWorld();
+  tick();
+}
+function tick(){
+  const d=new Date(),z=zone();
+  if(S.view==="digital"){
+    const p=parts(z,d,hc(),true);
+    $("#time").innerHTML=str(p)+(S.fmt==="12"?"<small>"+p.ap+"</small>":"");
+    $("#date").textContent=F(z,S.dy?{weekday:"long",year:"numeric",month:"long",day:"numeric"}:{month:"long",day:"numeric"}).format(d);
+    $("#zone").textContent=nice(z)+" ("+(p.off.replace("GMT","UTC")||"UTC")+")"+(S.tz==="auto"?" - detected":"");
+    document.title=str(p)+(S.fmt==="12"?" "+p.ap:"")+" - Digital Clock";
+  }else if(S.view==="analog"){
+    const p=parts(z,d,"h23"),h=+p.h%12,m=+p.m,s=+p.s;
+    $("#ah").setAttribute("transform","rotate("+((h+m/60)*30)+" 150 150)");
+    $("#am").setAttribute("transform","rotate("+((m+s/60)*6)+" 150 150)");
+    $("#as").setAttribute("transform","rotate("+(s*6)+" 150 150)");
+    $("#date").textContent="";
+  }else{
+    cards.forEach(c=>{const p=parts(c.z,d,hc(),true);c.t.textContent=str(p)+(S.fmt==="12"?" "+p.ap:"");c.o.textContent=(p.off.replace("GMT","UTC")||"UTC")});
+  }
+}
+buildTz("");
+apply();
+setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
