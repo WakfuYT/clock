@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clock",
+  "compatibility_date": "2026-09-30",
+  "workers_dev": false,
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "."
+  }
+}
